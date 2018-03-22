@@ -108,12 +108,19 @@ function! airline#highlighter#exec(group, colors)
   endif
   let colors = s:CheckDefined(colors)
   if old_hi != new_hi || !s:hl_group_exists(a:group)
-    let cmd = printf('hi %s %s %s %s %s %s %s %s',
-        \ a:group, s:Get(colors, 0, 'guifg='), s:Get(colors, 1, 'guibg='),
-        \ s:Get(colors, 2, 'ctermfg='), s:Get(colors, 3, 'ctermbg='),
-        \ s:Get(colors, 4, 'gui='), s:Get(colors, 4, 'cterm='),
-        \ s:Get(colors, 4, 'term='))
+
+	  let listprefix=['guifg=', 'guibg=', 'ctermfg=', 'ctermbg=', 'gui=', 'cterm=', 'term=']
+
+    if  len(colors)<7
+      call extend(colors, [colors[-1], colors[-1]])
+    endif
+
+    call map(listprefix,'v:val.colors[v:key]')
+    call filter(listprefix, 'v:val !~ "=$"')
+    
+    let cmd = 'hi '.a:group.' '.join(listprefix,' ')
     exe cmd
+
     if has_key(s:hl_groups, a:group)
       let s:hl_groups[a:group] = colors
     endif
@@ -152,14 +159,6 @@ function! s:CheckDefined(colors)
   return a:colors[0:1] + [fg, bg] + [a:colors[4]]
 endfunction
 
-function! s:Get(dict, key, prefix)
-  let res=get(a:dict, a:key, '')
-  if res is ''
-    return ''
-  else
-    return a:prefix. res
-  endif
-endfunction
 
 function! s:exec_separator(dict, from, to, inverse, suffix)
   if pumvisible()
